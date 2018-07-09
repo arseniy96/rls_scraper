@@ -1,18 +1,12 @@
-class HomeController < ApplicationController
-  require 'watir'
+class ScrapeWorker
+  include Sidekiq::Worker
 
-  def index
-
-  end
-
-  def scrape
-    ScrapeWorker.perform_async(0)
-    redirect_to root_path
-    # browser = Watir::Browser.new
-    # browser.goto "https://www.rlsnet.ru/pcr_alf_letter_c0.htm"
-    # browser.div(class: 'tn_alf_list').ul.lis.each do |li|
-    #   create_file_or_skip(li.a.href)
-    # end
+  def perform(index)
+    browser = Watir::Browser.new
+    browser.goto "https://www.rlsnet.ru/pcr_alf_letter_c#{index}.htm"
+    browser.div(class: 'tn_alf_list').ul.lis.each do |li|
+      create_file_or_skip(li.a.href)
+    end
   end
 
   private
@@ -57,5 +51,4 @@ class HomeController < ApplicationController
       browser.close
     end
   end
-
 end
