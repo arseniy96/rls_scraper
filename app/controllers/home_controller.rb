@@ -6,7 +6,7 @@ class HomeController < ApplicationController
   end
 
   def scrape
-    ScrapeWorker.perform_async(0)
+    ScrapeDirectoryWorker.perform_async(0)
     redirect_to root_path
     # browser = Watir::Browser.new
     # browser.goto "https://www.rlsnet.ru/pcr_alf_letter_c0.htm"

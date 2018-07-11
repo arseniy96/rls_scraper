@@ -1,21 +1,11 @@
-class ScrapeWorker
+class ScrapeItemWorker
   include Sidekiq::Worker
 
-  def perform(index)
-    browser = Watir::Browser.new
-    browser.goto "https://www.rlsnet.ru/pcr_alf_letter_c#{index}.htm"
-    browser.div(class: 'tn_alf_list').ul.lis.each do |li|
-      create_file_or_skip(li.a.href)
-    end
-  end
-
-  private
-
-  def create_file_or_skip(url)
+  def perform(url)
     browser = Watir::Browser.new
     browser.goto url
     browser.div(id: 'packing-header').click
-    sleep 0.2
+    sleep 0.1
 
     code_wrapper = browser.div(id: 'preplist_aurora').div(class: 'drug__list-filterresult').ul.text
     codes = code_wrapper.scan(/EAN\s\d*/).join(' ').gsub('EAN', '')
@@ -24,7 +14,7 @@ class ScrapeWorker
       f.write("<!DOCTYPE html>\n<html lang='en'>\n<head>\n<meta charset='UTF-8'>\n<title>Title</title>\n</head>\n<body>\n")
 
       f.write("<h1>Штрихкоды: #{codes.gsub('  ', ', ')}</h1>\n")
-      h1 = browser.h1.inner_html.to_s
+      h1 = browser.h1.text.to_s
       f.write("<h2>Название: #{h1}</h2>\n")
       content = browser.div(class: 'drug__content')
       h2s = content.h2s
@@ -46,6 +36,8 @@ class ScrapeWorker
       end
       f.write("\n</body>\n</html>")
       browser.close
+
+      Drug.create(name: h1, code: codes)
     else
       puts "Нет штрихкодов"
       browser.close
